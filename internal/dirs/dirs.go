@@ -2,7 +2,6 @@ package dirs
 
 import (
 	"os"
-	"log"
 	"path/filepath"
 )
 
@@ -23,7 +22,10 @@ func init() {
 	Downloads = filepath.Join(Data, "Downloads")
 	Versions = filepath.Join(Data, "Versions")
 
-	log.Println(Downloads, Data, Versions)
+	err = Mkdirs(Data, Downloads, Versions)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func Mkdirs(dirs ...string) error {
