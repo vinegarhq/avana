@@ -2,8 +2,10 @@ package main
 
 import (
 	"log"
+
+	"github.com/vinegarhq/avana/internal/dirs"
 )
 
 func main() {
-	log.Println("Pizza")
+	log.Println(dirs.Data)
 }
