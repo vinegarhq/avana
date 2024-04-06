@@ -6,34 +6,27 @@ import (
 )
 
 var (
-	Data string
+	Data      string
 	Downloads string
-	Versions string
+	Versions  string
+	Logs      string
 )
 
 func init() {
 	// this is %LOCALAPPDATA% but who cares its data
-	userCache, err := os.UserCacheDir()
+	cache, err := os.UserCacheDir()
 	if err != nil {
 		panic(err)
 	}
 
-	Data = filepath.Join(userCache, "Avana")
+	Data = filepath.Join(cache, "Avana")
 	Downloads = filepath.Join(Data, "Downloads")
 	Versions = filepath.Join(Data, "Versions")
+	Logs = filepath.Join(Data, "Logs")
 
-	err = Mkdirs(Data, Downloads, Versions)
-	if err != nil {
-		panic(err)
-	}
-}
-
-func Mkdirs(dirs ...string) error {
-	for _, dir := range dirs {
+	for _, dir := range []string{Data, Downloads, Versions, Logs} {
 		if err := os.MkdirAll(dir, 0o755); err != nil {
-			return err
+			panic(err)
 		}
 	}
-
-	return nil
 }

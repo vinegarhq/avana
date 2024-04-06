@@ -1,82 +1,44 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"log/slog"
 	"os"
-	"os/exec"
-	"path/filepath"
 
-	"github.com/ncruces/zenity"
-	"github.com/vinegarhq/vinegar/roblox"
-	"github.com/vinegarhq/vinegar/roblox/bootstrapper"
-	"github.com/vinegarhq/avana/internal/dirs"
+	cs "github.com/apprehensions/rbxweb/clientsettings"
+	"github.com/vinegarhq/avana/internal/binary"
 )
 
-var dialog zenity.ProgressDialog
-
-// this is horrible i hate it
-func dialogerror(err error) {
-	zenity.Error(err.Error(),
-		zenity.Title("Avana"),
-		zenity.ErrorIcon,
-	)
-
-	panic(err)
-}
-
-func SetupBinary(ver roblox.Version, dir string) {
-	if err := dirs.Mkdirs(dir, dirs.Downloads); err != nil {
-		dialogerror(err)
-	}
-
-	manifest, err := bootstrapper.FetchManifest(ver, dirs.Downloads)
-	if err != nil {
-		dialogerror(err)
-	}
-
-	if err := SetupManifest(&manifest, dir); err != nil {
-		dialogerror(err)
-	}
+func usage() {
+	fmt.Fprintf(os.Stderr, "usage: %s player|studio [ARGS...]", os.Args[0])
+	os.Exit(1)
 }
 
 func main() {
-	var err error
-
-	dialog, err = zenity.Progress(
-		zenity.Title("Avana"),
-	)
-	if err != nil {
-		panic(err)
+	// name-2006-01-02T15:04:05Z07:00.log
+	if len(os.Args) < 2 {
+		usage()
 	}
-	defer dialog.Close()
 
-	log.Println(dirs.Data)
+	var bt cs.BinaryType
+	switch os.Args[1] {
+	case "player":
+		bt = cs.WindowsPlayer
+	case "studio":
+		bt = cs.WindowsStudio64
+	default:
+		usage()
+	}
 
-	dialog.Text("Fetching Version")
-
-	ver, err := roblox.LatestVersion(roblox.Player, "LIVE")
-	if err != nil {
+	b := binary.New()
+	if err := b.Setup(bt); err != nil {
 		log.Fatal(err)
 	}
 
-	verDir := filepath.Join(dirs.Versions, ver.GUID)
-
-	_, err = os.Stat(filepath.Join(verDir, "AppSettings.xml"))
-	if err != nil {
-		dialog.Text("Updating/Installing Player")
-		SetupBinary(ver, verDir)
+	if err := b.Run(os.Args[1:]...); err != nil {
+		log.Fatal(err)
 	}
-	
-	dialog.Text("Running Player")
 
-	cmd := exec.Command(filepath.Join(verDir, roblox.Player.Executable()))
-	cmd.Stderr = os.Stderr
-	cmd.Stdout = os.Stdout
-
-	dialog.Close()
-
-	err = cmd.Run()
-	if err != nil {
-		dialogerror(err)
-	}
+	slog.Info("Goodbye!")
 }
