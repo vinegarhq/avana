@@ -63,17 +63,13 @@ func (b *binary) Run(args ...string) error {
 			return
 		}
 
-		tailFile(lf)
+		slog.Info("Roblox log file found", "path", lf)
 	}()
 
 	return cmd.Run()
 }
 
 func (b *binary) Setup() error {
-	if err := b.setupLogging(b.d.Type.Short()); err != nil {
-		return fmt.Errorf("logging: %w", err)
-	}
-
 	k, err := b.key()
 	if err != nil {
 		return fmt.Errorf("state reg key: %w", err)

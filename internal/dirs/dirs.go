@@ -9,7 +9,6 @@ var (
 	Data      string
 	Downloads string
 	Versions  string
-	Logs      string
 )
 
 func init() {
@@ -22,9 +21,8 @@ func init() {
 	Data = filepath.Join(cache, "Avana")
 	Downloads = filepath.Join(Data, "Downloads")
 	Versions = filepath.Join(Data, "Versions")
-	Logs = filepath.Join(Data, "Logs")
 
-	for _, dir := range []string{Data, Downloads, Versions, Logs} {
+	for _, dir := range []string{Data, Downloads, Versions} {
 		if err := os.MkdirAll(dir, 0o755); err != nil {
 			panic(err)
 		}

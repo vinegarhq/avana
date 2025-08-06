@@ -2,32 +2,13 @@ package binary
 
 import (
 	"fmt"
-	"io"
-	"log"
 	"log/slog"
 	"os"
 	"path/filepath"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/nxadm/tail"
-	"github.com/vinegarhq/avana/internal/dirs"
 )
-
-func (b *binary) setupLogging(name string) error {
-  logTimeFormat := "2006-01-02_15-04-05"
-	logFile, err := os.Create(filepath.Join(dirs.Logs,
-		name+"-"+time.Now().Format(logTimeFormat)+".log"))
-	if err != nil {
-		return err
-	}
-	b.lf = logFile
-
-	log.SetOutput(io.MultiWriter(os.Stderr, logFile))
-	slog.Info("Logging to file", "path", logFile.Name())
-
-	return nil
-}
 
 func robloxLogFile() (string, error) {
 	ad, err := os.UserCacheDir()
@@ -68,20 +49,4 @@ func robloxLogFile() (string, error) {
 			slog.Error("Recieved fsnotify watcher error", "error", err)
 		}
 	}
-}
-
-func tailFile(name string) {
-	slog.Info("Tailing Roblox log file", "path", name)
-
-	t, err := tail.TailFile(name, tail.Config{Follow: true})
-	if err != nil {
-		slog.Error("Could not tail Roblox log file", "error", err)
-		return
-	}
-
-	for line := range t.Lines {
-		slog.Warn(line.Text)
-	}
-
-	slog.Warn("Wtf?! Tail closed?! NOOOOOOO!")
 }
