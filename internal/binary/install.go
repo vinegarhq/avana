@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/sewnie/rbxbin"
 	"github.com/vinegarhq/avana/internal/dirs"
@@ -36,7 +37,7 @@ func (b *binary) install() error {
 	eg := new(errgroup.Group)
 
 	for _, p := range ps {
-		if p.Name == "RobloxPlayerInstaller.exe" {
+		if !strings.HasSuffix(p.Name, ".zip") {
 			continue
 		}
 

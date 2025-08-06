@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"log/slog"
@@ -22,8 +23,12 @@ func main() {
 		usage()
 	}
 
+	version := flag.String("guid", "", "Forced deployment version")
+	flag.Parse()
+	args := flag.Args()
+
 	var binaryType rbxweb.BinaryType
-	switch os.Args[1] {
+	switch args[0] {
 	case "player":
 		binaryType = rbxbin.WindowsPlayer
 	case "studio":
@@ -33,18 +38,29 @@ func main() {
 	}
 
 	client := rbxweb.NewClient()
-	deployment, err := rbxbin.GetDeployment(client, binaryType, "")
-	if err != nil {
-		log.Fatalf("deployment: %s", err)
-	}
+
+	deployment := func() *rbxbin.Deployment {
+		if v := *version; v != "" {
+			return &rbxbin.Deployment{
+				Type:    binaryType,
+				Channel: "",
+				GUID:    v,
+			}
+		}
+		d, err := rbxbin.GetDeployment(client, binaryType, "")
+		if err != nil {
+			log.Fatalf("deployment: %s", err)
+		}
+		return d
+	}()
 
 	b := binary.New(client, deployment)
-	
+
 	if err := b.Setup(); err != nil {
 		log.Fatalf("setup %s: %s", deployment.GUID, err)
 	}
 
-	if err := b.Run(os.Args[1:]...); err != nil {
+	if err := b.Run(args[1:]...); err != nil {
 		log.Fatal(err)
 	}
 

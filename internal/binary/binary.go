@@ -10,17 +10,17 @@ import (
 	"path/filepath"
 	"time"
 
-	"golang.org/x/sys/windows/registry"
 	"github.com/sewnie/rbxbin"
 	"github.com/sewnie/rbxweb"
 	"github.com/vinegarhq/avana/internal/dirs"
+	"golang.org/x/sys/windows/registry"
 )
 
 const logTimeout = 6 * time.Second
 const stateRegistryPath = `Software\Avana\State`
 
 type binary struct {
-	c *rbxweb.Client
+	c   *rbxweb.Client
 	dir string
 	d   *rbxbin.Deployment
 	m   rbxbin.Mirror
@@ -29,9 +29,9 @@ type binary struct {
 
 func New(c *rbxweb.Client, d *rbxbin.Deployment) *binary {
 	return &binary{
-		m: rbxbin.DefaultMirror,
-		d: d,
-		c: c,
+		m:   rbxbin.DefaultMirror,
+		d:   d,
+		c:   c,
 		dir: filepath.Join(dirs.Versions, d.GUID),
 	}
 }
@@ -75,8 +75,6 @@ func (b *binary) Setup() error {
 		return fmt.Errorf("state reg key: %w", err)
 	}
 	defer k.Close()
-
-
 
 	ver, _, err := k.GetStringValue(b.verKeyName())
 	if err != nil && err != registry.ErrNotExist {
