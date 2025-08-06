@@ -6,7 +6,8 @@ import (
 	"log/slog"
 	"os"
 
-	cs "github.com/apprehensions/rbxweb/clientsettings"
+	"github.com/sewnie/rbxbin"
+	"github.com/sewnie/rbxweb"
 	"github.com/vinegarhq/avana/internal/binary"
 )
 
@@ -21,19 +22,26 @@ func main() {
 		usage()
 	}
 
-	var bt cs.BinaryType
+	var binaryType rbxweb.BinaryType
 	switch os.Args[1] {
 	case "player":
-		bt = cs.WindowsPlayer
+		binaryType = rbxbin.WindowsPlayer
 	case "studio":
-		bt = cs.WindowsStudio64
+		binaryType = rbxbin.WindowsStudio
 	default:
 		usage()
 	}
 
-	b := binary.New()
-	if err := b.Setup(bt); err != nil {
-		log.Fatal(err)
+	client := rbxweb.NewClient()
+	deployment, err := rbxbin.GetDeployment(client, binaryType, "")
+	if err != nil {
+		log.Fatalf("deployment: %s", err)
+	}
+
+	b := binary.New(client, deployment)
+	
+	if err := b.Setup(); err != nil {
+		log.Fatalf("setup %s: %s", deployment.GUID, err)
 	}
 
 	if err := b.Run(os.Args[1:]...); err != nil {

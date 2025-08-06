@@ -9,7 +9,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/apprehensions/rbxbin"
+	"github.com/sewnie/rbxbin"
 	"github.com/vinegarhq/avana/internal/dirs"
 	"golang.org/x/sync/errgroup"
 )
@@ -19,25 +19,32 @@ func (b *binary) install() error {
 		return errors.New("deployment directory unknown")
 	}
 
-	ps, err := b.m.GetPackages(b.d)
+	ps, err := b.m.GetPackages(b.c, b.d)
 	if err != nil {
-		return err
+		return fmt.Errorf("packages: %w", err)
+	}
+
+	dsts, err := b.m.BinaryDirectories(b.c, b.d)
+	if err != nil {
+		return fmt.Errorf("dirs: %w", err)
 	}
 
 	if err := os.MkdirAll(b.dir, 0o755); err != nil {
-		return err
+		return fmt.Errorf("mkdir: %w", err)
 	}
 
-	dsts := rbxbin.BinaryDirectories(b.d.Type)
 	eg := new(errgroup.Group)
 
 	for _, p := range ps {
-		if p.Name == "RobloxPlayerLauncher.exe" {
+		if p.Name == "RobloxPlayerInstaller.exe" {
 			continue
 		}
 
 		eg.Go(func() error {
-			return b.setupPackage(&p, dsts[p.Name])
+			if err := b.setupPackage(&p, dsts[p.Name]); err != nil {
+				return fmt.Errorf("%s: %w", p.Name, err)
+			}
+			return nil
 		})
 	}
 
@@ -46,7 +53,7 @@ func (b *binary) install() error {
 	}
 
 	if err := rbxbin.WriteAppSettings(b.dir); err != nil {
-		return err
+		return fmt.Errorf("appsettings: %w", err)
 	}
 
 	return nil
@@ -67,7 +74,7 @@ func (b *binary) setupPackage(p *rbxbin.Package, dir string) error {
 		}
 	}
 
-	if err := p.Extract(src, b.dir); err != nil {
+	if err := p.Extract(src, filepath.Join(b.dir, dir)); err != nil {
 		return err
 	}
 

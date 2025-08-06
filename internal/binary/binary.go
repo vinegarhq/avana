@@ -8,12 +8,11 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"golang.org/x/sys/windows/registry"
 	"time"
 
-	"github.com/apprehensions/rbxbin"
-	cs "github.com/apprehensions/rbxweb/clientsettings"
-
+	"golang.org/x/sys/windows/registry"
+	"github.com/sewnie/rbxbin"
+	"github.com/sewnie/rbxweb"
 	"github.com/vinegarhq/avana/internal/dirs"
 )
 
@@ -21,15 +20,19 @@ const logTimeout = 6 * time.Second
 const stateRegistryPath = `Software\Avana\State`
 
 type binary struct {
+	c *rbxweb.Client
 	dir string
-	d   rbxbin.Deployment
+	d   *rbxbin.Deployment
 	m   rbxbin.Mirror
 	lf  *os.File
 }
 
-func New() *binary {
+func New(c *rbxweb.Client, d *rbxbin.Deployment) *binary {
 	return &binary{
 		m: rbxbin.DefaultMirror,
+		d: d,
+		c: c,
+		dir: filepath.Join(dirs.Versions, d.GUID),
 	}
 }
 
@@ -66,8 +69,8 @@ func (b *binary) Run(args ...string) error {
 	return cmd.Run()
 }
 
-func (b *binary) Setup(bt cs.BinaryType) error {
-	if err := b.setupLogging(bt.Short()); err != nil {
+func (b *binary) Setup() error {
+	if err := b.setupLogging(b.d.Type.Short()); err != nil {
 		return fmt.Errorf("logging: %w", err)
 	}
 
@@ -77,12 +80,7 @@ func (b *binary) Setup(bt cs.BinaryType) error {
 	}
 	defer k.Close()
 
-	d, err := rbxbin.GetDeployment(bt, "")
-	if err != nil {
-		return fmt.Errorf("get deployment: %w", err)
-	}
-	b.d = d
-	b.dir = filepath.Join(dirs.Versions, b.d.GUID)
+
 
 	ver, _, err := k.GetStringValue(b.verKeyName())
 	if err != nil && err != registry.ErrNotExist {
